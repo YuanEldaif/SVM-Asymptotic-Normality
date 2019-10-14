@@ -15,11 +15,12 @@ output:
       highlightLines: true
       countIncrementalSlides: false
 editor_options: 
-  chunk_output_type: console
   
+  chunk_output_type: console
 background-image: url("BreastCancer.jpg")
 background-size: contain
 ---
+class: bg-main1
 ```{r setup, include=FALSE}
 options(htmltools.dir.version = FALSE)
 knitr::opts_chunk$set(echo = TRUE, eval= TRUE)
@@ -33,22 +34,22 @@ background-image: url("BreastCancer.jpg")
 background-size: contain
 ---
 class: bg-main1
-##Breast cancer is the second leading cause of cancer death in women after lung cancer. 
+##⚠️Breast cancer is the second leading cause of cancer death in women after lung cancer. 
 
 --
-##There is a 1 in 8 chance she will develop breast cancer in the United States.
+##⚠️There is a 1 in 8 chance she will develop breast cancer in the United States.
 
 --
-##The average 5-year survival rate for women with invasive breast cancer is 90%.
+##⚠️The average 5-year survival rate for women with invasive breast cancer is 90%.
 
 --
-###If the cancer is located only in the breast, the 5-year survival rate of women with breast cancer is 99%. 62% of people with breast cancer are diagnosed with this stage.
+###🔴If the cancer is located only in the breast, the 5-year survival rate of women with breast cancer is 99%. 62% of people with breast cancer are diagnosed with this stage.
 
 --
-###If the cancer has spread to the regional lymph nodes, the 5-year survival rate is 85%.
+###🔴If the cancer has spread to the regional lymph nodes, the 5-year survival rate is 85%.
 
 --
-###If the cancer has spread to a distant part of the body, the 5-year survival rate is 27%.
+###🔴If the cancer has spread to a distant part of the body, the 5-year survival rate is 27%.
 
 ---
 class: split-two white
@@ -57,7 +58,7 @@ class: split-two white
 ## Breast Cancer Wisconsin (Diagnostic) Data Set 
 ###University of Wisconsin, Clinical Sciences Center
 <br>
-###Attribute Information:
+###⚪Attribute Information:
 ###Number of instances: 569
 ###Number of attribute: 32
 <br>
@@ -83,9 +84,9 @@ j) fractal dimension ("coastline approximation" - 1)
 <br>
 ###All feature values are recoded with four significant digits.
 <br>
-###Missing attribute values: none
+###⚪Missing attribute values: none
 <br>
-###Class distribution: 357 benign, 212 malignant
+###⚪Class distribution: 357 benign, 212 malignant
 
 ]]
 
@@ -186,10 +187,10 @@ corrplot(Cor, type="upper", order="hclust")
 class: bg-main1
 
 #Model: SVM
-##Article : "Asymptotic normality of support vector machine variants and other regularized kernel methods" --Robert Hable
+##.green[Article :] "Asymptotic normality of support vector machine variants and other regularized kernel methods" --Robert Hable
 
 --
-##SVM Estimator $$S_n: (\mathcal{X} \, X \, \mathcal{Y})^n \to H, \quad D_n \mapsto f_{L,D_n,\lambda_{D_n}}$$
+##.yellow[SVM Estimator] $$S_n: (\mathcal{X} \, X \, \mathcal{Y})^n \to H, \quad D_n \mapsto f_{L,D_n,\lambda_{D_n}}$$
 
 ##where $f_{L,D_n,\lambda_{D_n}}$ is that function $f \in H$ which minimizes $$\frac{1}{n} \sum L(x_i,y_i,f(x_i)) + \lambda_{D_n}||f||_H^2$$.
 
@@ -215,11 +216,12 @@ class: bg-main1
 ###.yellow[4)] $\lambda$ is random sequence, so it's possible to use any data-driven method for choosing the regulization parameter, such as cross-validation. It's desirable to have a bound $$0 \leq \mathcal{R}_{L,P}(f_{L,P,\lambda_0}) - \mathcal{R}_{L,P}^* \leq C(\lambda_0) \to 0 \text{for} \lambda \to 0$$ to find $\lambda$
 
 ---
+class: bg-main1
 ##The Proof is done by below steps:
 
-```{r, echo = FALSE, out.height="100%" , out.width="100%"}
+```{r, echo = FALSE, eval = FALSE, message= FALSE }
 library(DiagrammeR)
-mermaid("
+m<- mermaid("
         graph LR
         A{Theorem 3.1} --> B{Theorem 3.2}
         subgraph Theorem 3.1
@@ -228,7 +230,13 @@ mermaid("
         end
         A --- C(Step1) 
         ")
+widgetframe::frameableWidget(m)
 ```
+
+```{r, echo = FALSE, fig.align='center', out.height="100%" , out.width="100%"}
+knitr::include_graphics("Diagram.png")
+```
+
 
 ---
 class: bg-main1
@@ -239,38 +247,38 @@ knitr::include_graphics("Theorem31.png")
 
 ---
 class: bg-main1
-###1) Show that $\sqrt{n}(\mathbb{P}_{D_n} - P)$ converges weakly to a Gaussian process
+###.yellow[Step]1️⃣ Show that $\sqrt{n}(\mathbb{P}_{D_n} - P)$ converges weakly to a Gaussian process
 
 --
-###2) The map $S: P \mapsto f_{L,P,\lambda}$ is suitably Hadamard-differentiable.
+###.yellow[Step]2️⃣The map $S: P \mapsto f_{L,P,\lambda}$ is suitably Hadamard-differentiable.
 
 --
-###(a) first order differentiable
-###(b) second order differentiable
+###🅰️ first order differentiable
+###🅱️ second order differentiable
 
 --
-###3) Applying a functional delta-method, show asymptotic normality of $\lambda$,  $$\sqrt{n}(\lambda_{D_n} - \lambda_0) \xrightarrow{P} 0,$$ then the risk:    $$\sqrt{n}(\mathbb{R}_{L,P}(f_{L,D_n,\lambda_{D_n}}) - \mathbb{R}_{L,P}(f_{L,P,\lambda_0}))$$
+###.yellow[Step]3️⃣: Applying a functional delta-method, show asymptotic normality of $\lambda$,  $$\sqrt{n}(\lambda_{D_n} - \lambda_0) \xrightarrow{P} 0,$$ then the risk:    $$\sqrt{n}(\mathbb{R}_{L,P}(f_{L,D_n,\lambda_{D_n}}) - \mathbb{R}_{L,P}(f_{L,P,\lambda_0}))$$
 
 ---
 class: bg-main1
 ##Related theorems in our class:
 
 --
-###**Lebesgue Dominated Convergence Theorem**：If the random variables $X_n \to X$, then we have $|X_n| \leq Y$, almost surely for all n. Then $X_n \in L^1$, $X \in L^1$, and $\lim_{0\to\infty}E(X_n) = E(X)$.
+###🍫**Lebesgue Dominated Convergence Theorem**：If the random variables $X_n \to X$, then we have $|X_n| \leq Y$, almost surely for all n. Then $X_n \in L^1$, $X \in L^1$, and $\lim_{0\to\infty}E(X_n) = E(X)$.
 <br>
 
 --
-###**Central Limit Theorem** for some nonprametric estimators still are asymptotically normal for the same rate $\sqrt{n}$ as many parametric estiamators. This article showed that also SVM based on smooth loss fuctions enjoy an asymptotic normality property for the rate of $\sqrt{n}$.
+###🍫**Central Limit Theorem** for some nonprametric estimators still are asymptotically normal for the same rate $\sqrt{n}$ as many parametric estiamators. This article showed that also SVM based on smooth loss fuctions enjoy an asymptotic normality property for the rate of $\sqrt{n}$.
 <br>
 
 --
-###**Taylor's series ( $O_p$ - delta function)** which was proved by law of large number (LLN). The average converges in probability to its expectation. 
+###🍫**Taylor's series ( $O_p$ - delta function)** which was proved by law of large number (LLN). The average converges in probability to its expectation. 
 <br>
 
 ---
 class: bg-main1
 
-#.yellow[Step 1]: CLT
+#.yellow[Step]1️⃣️: CLT
 ```{r, echo = FALSE, out.width = "100%", out.height = "100%"}
 knitr::include_graphics("Mainresult_1.png")
 ```
@@ -278,7 +286,7 @@ knitr::include_graphics("Mainresult_1.png")
 ---
 class: bg-main1
 
-#.yellow[Step 2]: Define $B_s$
+#.yellow[Step]2️⃣: Define $B_s$ for Hadamard-differentiability
 ```{r, echo = FALSE, out.width = "100%", out.height = "100%"}
 knitr::include_graphics("Mainresult_2.png")
 ```
@@ -286,7 +294,7 @@ knitr::include_graphics("Mainresult_2.png")
 ---
 class: bg-main1
 
-#.yellow[Step 3]: Prove $\lambda$ is asymptotically normal so delta method can be applied
+#.yellow[Step]3️⃣: Prove $\lambda$ is asymptotically normal so delta method can be applied
 ```{r, echo = FALSE, out.width = "100%", out.height = "100%"}
 knitr::include_graphics("Mainresult_3.png")
 knitr::include_graphics("Mainresult_4.png")
@@ -332,7 +340,7 @@ class: middle center bg-main1
 
 <br/>
 
-#Thanks!
+#😇Thank you!
 
 <br/>
 
