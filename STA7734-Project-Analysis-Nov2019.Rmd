@@ -326,7 +326,7 @@ cm_svm_caret
 ```
 ## Use caret package to fit models after droped correlated variables with default parameter tuning with 5 fold cross validation, repeated 5 times; No data scaling.
 
-### **It's the same result with previous model without dropped correlated variables but it's less sensitive on positive predicting and more sensitive on negative predicting.**
+### **It's not as good as the previous model with all features but it's less sensitive on negative predicting.**
 ```{r svm caret drop raw, echo=FALSE}
 #fitControl <- trainControl(method = "none", classProbs = TRUE)
 fitControl <- trainControl(method="repeatedcv",
