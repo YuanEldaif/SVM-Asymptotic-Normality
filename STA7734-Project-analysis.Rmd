@@ -2,23 +2,26 @@
 title: "STA7734 Project"
 author: "Yuan Du"
 date: "11/26/2019"
-output:
-  
-  html_document: default
+output:html_document: default
 ---
 
-```{r setup, include=FALSE}
+### Appendix
+```{r setup, eval=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
 library(psych)
 library(corrplot)
+library(e1071)
 library(caret)
+library(plotly)
+library(plyr)
+
 ```
 
-## read data
-```{r read, message=FALSE, warning=FALSE, include=FALSE}
+## Read data
+```{r read, message=FALSE, warning=FALSE, eval=FALSE}
 Data <- read_csv("C:/Work/Project/STA7734/SVM-Asymptotic-Normality/Data/data.csv",
                  col_names = T,
                  col_types=cols(ID =col_character()，
@@ -54,7 +57,7 @@ Data <- read_csv("C:/Work/Project/STA7734/SVM-Asymptotic-Normality/Data/data.csv
                                 "31" = col_double(),
                                 "32" = col_double()
                                 )) %>%
-                        rename( "radius" = "3",
+                        dplyr::rename( "radius" = "3",
                                 "texture" = "4",
                                 "perimeter" = "5",
                                 "area" = "6",
@@ -89,15 +92,17 @@ Data <- read_csv("C:/Work/Project/STA7734/SVM-Asymptotic-Normality/Data/data.csv
 spec(Data)
 ```
 
-## Check Data and missing values
-```{r check, echo=FALSE}
+## Check first 6 rows of Data, and missing values 
+## * 32 columns, first two columns are ID and target variable: Diagnosis (B,M).
+## * No Missing value
+```{r check, eval=FALSE}
 head(Data)
-tail(Data)
+#tail(Data)
 sapply(Data, function(x) sum(is.na(x)))
 ```
 
-## Data visiualization
-```{r, message=FALSE, warning=FALSE, echo=TRUE}
+## Descriptive Statistics on numeric variables and target variable: Diagnosis
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
 
 Data_drop <- Data[,-1] #drop ID
 psych::describe(Data_drop) # Describe data
@@ -105,9 +110,14 @@ psych::describe(Data_drop) # Describe data
 
 Data_drop$Diagnosis <- as.factor(Data_drop$Diagnosis)
 summary(Data_drop$Diagnosis)
+```
+# Data visiualization
+## * Plot Diagnosis; 
+## * Histogram for all Variables; 
+## * Histogram for all Variables by Diagnosis.
 
-#Plot Diagnosis 
-
+## **There are differences between B and M Diagnosis such as area, compactness, perimeter, radius, etc**
+```{r, message=FALSE, warning=FALSE, eval=FALSE}
 ggplot(Data,aes(x = Diagnosis）) +
     geom_bar(aes(y = ..count../sum(..count..), fill = Diagnosis)) + 
         ylab("Percent") + 
@@ -131,7 +141,7 @@ Data_drop %>%
 ```
 
 ## Correlaion analysis by spearman since most variables are non normal distributed
-```{r, echo=TRUE}
+```{r, eval=FALSE}
 #create correlation matrix
 Cor <- Data_drop %>% 
        select(-Diagnosis) %>%
@@ -141,53 +151,56 @@ corrplot(Cor, type="upper", order="hclust")
 ```
 
 ## Drop variables with multicolinearity, where correlation >0.9, and remove the variable with the largest mean absolute correlation
-```{r, echo=TRUE}
+```{r, eval=FALSE}
 #Removing all features with a correlation higher than 0.7, keeping the feature with the lower mean. 
 
 highlyCor <- colnames(Data_drop[,-1])[findCorrelation(Cor, cutoff = 0.9, verbose = TRUE)]
+```
+
+## Highly correlated variables
+```{r, eval=FALSE}
 highlyCor #highly correlted variables
 
 Data_drop_cor <- Data_drop[, which(!colnames(Data_drop) %in% highlyCor)]#Drop highly correlcted variables
 
 ```
 
-##Number of columns
-```{r, echo=TRUE}
-ncol(Data_drop_cor)
+## Number of features left
+```{r, eval=FALSE}
+ncol(Data_drop_cor)-1
 ```
 
-## Data Transformation/ Dimension reduction by using PCA, after dropping label.
-```{r, include =FALSE}
+## Data Transformation/ Dimension Reduction by using PCA, after dropping label.
+```{r, eval=FALSE}
 #Drop Diagnosis
 Data_pca <- prcomp(Data_drop[,-1], center=TRUE, scale=TRUE)
 ```
-#Plot first 10 PCA components for raw data
-```{r, echo=TRUE}
-plot(Data_pca, type="l", main='')
-grid(nx = 10, ny = 14)
-title(main = "Principal components weight", sub = NULL, xlab = "Components")
-box()
+
+## PCA components summary for raw data
+```{r, eval=FALSE}
 summary(Data_pca)#need 10 components for variance over 95%
 ```
-##PCA without multicolinearity variables
-```{r, echo=TRUE}
+
+## PCA without highly correlated variables
+```{r, eval=FALSE}
 Data_pca_re <- prcomp(Data_drop_cor[,-1], center=TRUE, scale=TRUE)
 summary(Data_pca_re)#7 components have variance over 97%
 ```
 
-## visualize which variables are the most influential on the first 2 components
-```{r, echo=TRUE}
+## Plot first 2 PCA components
+```{r, eval=FALSE}
 pca_df <- as.data.frame(Data_pca$x)
 ggplot(pca_df, aes(x=PC1, y=PC2, col=Data$Diagnosis)) + geom_point(alpha=0.5)
 ```
-##Plot PCA without multicolinearity variables on the first 2 components
-```{r, echo=TRUE}
+
+## Plot PCA without highly correlated variables on the first 2 components
+```{r, eval=FALSE}
 pca_df_re <- as.data.frame(Data_pca_re$x)
 ggplot(pca_df_re, aes(x=PC1, y=PC2, col=Data$Diagnosis)) + geom_point(alpha=0.5)
 ```
 
-## Individuals with a similar profile are grouped together
-```{r, echo=TRUE }
+## Visualize which variables are the most influential. Individuals with a similar profile are grouped together
+```{r, message = FALSE, eval=FALSE }
 library(factoextra)
 fviz_eig(Data_pca)
 fviz_pca_var(Data_pca,
@@ -196,8 +209,9 @@ fviz_pca_var(Data_pca,
              repel = TRUE     # Avoid text overlapping
              )
 ```
-##PCA after droped correlated variables
-```{r, echo=TRUE}
+
+## After correlated variables were dropped
+```{r, eval=FALSE}
 fviz_eig(Data_pca_re)
 fviz_pca_var(Data_pca_re,
              col.var = "contrib", # Color by contributions to the PC
@@ -207,10 +221,12 @@ fviz_pca_var(Data_pca_re,
 
 ```
 
-#split data into training and test
-```{r, include=FALSE}
+## **Correlated variables such as area, perimeters, radius are grouped together and they are important contributers**
+<br />
+# **Model Training**
+## split data into training and test
+```{r, eval=FALSE}
 
-library(caret)
 set.seed(1234) # so that the indices will be the same when re-run
 trainIndices = createDataPartition(Data_drop$Diagnosis, p=.8, list=F)
 
@@ -228,8 +244,8 @@ prop.table(table(train_raw$Diagnosis))
 prop.table(table(test_raw$Diagnosis))
 ```
 
-#split data into training and test after dropping correlated variables
-```{r, include=FALSE}
+## split data into training and test after dropping correlated variables
+```{r, eval=FALSE}
 #for multicolinearty droped Data_drop_cor
 set.seed(1234) # so that the indices will be the same when re-run
 trainIndices_drop = createDataPartition(Data_drop_cor$Diagnosis, p=.8, list=F)
@@ -249,9 +265,11 @@ prop.table(table(train_drop_raw$Diagnosis))
 prop.table(table(test_drop_raw$Diagnosis))
 ```
 
-#Raw svm with original data with default setting, data is not scaled; Using library(e1071), Default parameters: Cost =1,gamma = 1/(data dimension)
-```{r svm raw, echo=TRUE}
-library(e1071)
+## Svm with original data by Using library(e1071), data is not scaled; 
+## * Default parameters: Cost =1, gamma = 1/(data dimension)
+## first gamma:
+```{r svm raw, eval=FALSE}
+
 svm_raw <- svm(Diagnosis ~ ., data=train_raw, scale = FALSE, kernel =
 "radial", type = "C-classification")
 #svm_pca <- svm(Diagnosis ~ ., data=Data_pca)
@@ -263,8 +281,10 @@ cm_svm <- confusionMatrix(pred_svm, as.factor(test_raw$Diagnosis), positive = "M
 cm_svm
 #summary(svm_raw)
 ```
-#Raw svm after droped correlated variables with default setting; Using library(e1071)
-```{r svm_drop_raw, echo=TRUE}
+
+## Svm with after droped correlated variables with default setting by using library(e1071)
+## second gamma:
+```{r svm_drop_raw, eval=FALSE}
 svm_drop_raw <- svm(Diagnosis ~ ., data=train_drop_raw, scale = FALSE, kernel =
 "radial", type = "C-classification")
 #svm_pca <- svm(Diagnosis ~ ., data=Data_pca)
@@ -276,9 +296,18 @@ cm_drop_svm <- confusionMatrix(pred_drop_svm, as.factor(test_drop_raw$Diagnosis)
 cm_drop_svm
 ```
 
-#Raw caret Fitting Models with default Parameter Tuning; Using kernlab package; C = 2 ^((1:len) - 3)); C=0.25, Sigma is defined by Kernlab package's sigest function, sigest estimates based upon the 0.1 and 0.9 quantile of $||x-x'||^2$Basically any value in between those two bounds will produce good results. A vector of length 3 defining the range (0.1 quantile, median and 0.9 quantile) of the sigma hyperparameter
-```{r svm caret raw, echo=TRUE}
-fitControl <- trainControl(method = "none", classProbs = TRUE)
+## Use caret package to fit models with default parameter tuning  with 5 fold cross validation, repeated 5 times; Caret "svmRadial" model uses kernlab package; No data scaling.
+
+### * $C = 2^{((1:len) - 3)}$ (C=0.25) 
+### * Sigma is defined by Kernlab package's sigest function, sigest estimates are based upon the 0.1 and 0.9 quantile of $||x-x'||^2$. Basically any value in between those two bounds will produce good results. A vector of length 3 defining the range (0.1 quantile, median and 0.9 quantile) of the sigma hyperparameter.
+```{r svm caret raw, eval=FALSE}
+#fitControl <- trainControl(method = "none", classProbs = TRUE)
+fitControl <- trainControl(method="repeatedcv",
+                            number = 5,
+                           repeats =5,
+                            preProcOptions = list(thresh = 0.8), # threshold for pca preprocess
+                            classProbs = TRUE,
+                            summaryFunction = twoClassSummary)
 set.seed(825)
 svm_raw_caret <- train(Diagnosis~.,
                     data = train_raw,
@@ -292,9 +321,17 @@ cm_svm_caret <- confusionMatrix(pred_svm_caret, as.factor(test_raw$Diagnosis), p
 cm_svm_caret
 
 ```
-#Raw caret fitting after droped correlated variables;Fitting Models with defult Parameter Tuning; It's the same result with previous model without dropped correlated variables but it's less sensitive on positive predicting and more sensitive on negative predicting.
-```{r svm caret drop raw, echo=TRUE}
-fitControl <- trainControl(method = "none", classProbs = TRUE)
+## Use caret package to fit models after droped correlated variables with default parameter tuning with 5 fold cross validation, repeated 5 times; No data scaling.
+
+### **It's the same result with previous model without dropped correlated variables but it's less sensitive on positive predicting and more sensitive on negative predicting.**
+```{r svm caret drop raw, eval=FALSE}
+#fitControl <- trainControl(method = "none", classProbs = TRUE)
+fitControl <- trainControl(method="repeatedcv",
+                            number = 5,
+                           repeats =5,
+                            preProcOptions = list(thresh = 0.8), # threshold for pca preprocess
+                            classProbs = TRUE,
+                            summaryFunction = twoClassSummary)
 set.seed(825)
 svm_drop_caret <- train(Diagnosis~.,
                     data = train_drop_raw,
@@ -307,9 +344,9 @@ pred_drop_svm_caret <- predict(svm_drop_caret, test_drop_raw)
 cm_drop_svm_caret <- confusionMatrix(pred_drop_svm_caret, as.factor(test_drop_raw$Diagnosis), positive = "M")
 cm_drop_svm_caret
 ```
-#Scale variables ;
-```{r svm scale, echo=TRUE}
 
+# **Scale variables and cross validation**
+```{r svm scale, eval=FALSE}
 
 fitControl <- trainControl(method="repeatedcv",
                             number = 5,
@@ -325,15 +362,15 @@ svm_scale <- train(Diagnosis~.,
                     preProcess=c('center', 'scale'),
                     trace=FALSE,
                     trControl=fitControl)
+svm_scale$finalModel
 pred_svm_scale <- predict(svm_scale, test_raw)
 cm_svm_scale <- confusionMatrix(pred_svm_scale, as.factor(test_raw$Diagnosis), positive = "M")
 cm_svm_scale
 
 ```
 
-#Scale variables with pca 0.8;
-```{r svm scale pca, echo=TRUE}
-
+## Scale variables with pca thresdhold = 0.8. 0.8 is the sweet spot.
+```{r svm scale pca, eval=FALSE}
 
 fitControl <- trainControl(method="repeatedcv",
                             number = 5,
@@ -349,20 +386,21 @@ svm_scale_pca <- train(Diagnosis~.,
                     preProcess=c('center', 'scale','pca'),
                     trace=FALSE,
                     trControl=fitControl)
-svm_scale_pca
+svm_scale_pca$finalModel
 pred_svm_scale_pca <- predict(svm_scale_pca, test_raw)
 cm_svm_scale_pca <- confusionMatrix(pred_svm_scale_pca, as.factor(test_raw$Diagnosis), positive = "M")
 cm_svm_scale_pca
 
-
 ```
 
-#Scale variables with dropped variables and with pca; pca doesn't matter any more. sigest estimates based upon the 0.1 and 0.9 quantile of $||x-x'||^2$Basically any value in between those two bounds will produce good results.
-```{r svm pca, echo=TRUE}
+## Scale variables with dropped variables and with pca = 0.95; 
+
+### **The results doesn't improve much anymore, with increasing threshold of pca, the performance increases on the 4th digit and it's more stable**
+```{r svm pca, eval=FALSE}
 fitControl <- trainControl(method="repeatedcv",
                            number = 5,
                             repeats =5,
-                            preProcOptions = list(thresh = 0.8), # threshold for pca preprocess
+                            preProcOptions = list(thresh = 0.95), # threshold for pca preprocess
                             classProbs = TRUE,
                             summaryFunction = twoClassSummary)
 set.seed(825)
@@ -382,12 +420,17 @@ cm_svmdrop_pca
 
 ```
 
-#Tune SVM parameters； The best parameters on training data doesn't guarentee the best on the test data. It would be overfitting. The final values used for the model were sigma = 0.015 and C = 1.
-```{r, echo=FALSE }
+# Tune SVM parameters by grid search, total 42 pairs
+
+```{r, echo=TRUE }
 svmGrid <-  expand.grid(sigma = c(.01, .015, 0.2,0.25, 0.275,0.3),
                     C = c(0.25, 0.5, 0.75, 0.9, 1, 1.1, 1.25))
                     
 nrow(svmGrid)
+```
+
+
+```{r, eval=FALSE }
 fitControl <- trainControl(method="repeatedcv",
                            number = 5,
                             repeats =5,
@@ -407,18 +450,30 @@ svm_tune <- train(Diagnosis ~ .,
 #ten fold The final values used for the model were sigma = 0.015 and C = 0.9.
 #five fold The final values used for the model were sigma = 0.015 and C = 0.75.
 #The final values used for the model were sigma = 0.015 and C = 1.
+
+```
+
+## Plot the results on the feature selected data with pca, by grid search 
+```{r, eval=FALSE}
+plot(svm_tune)  
+```
+
+## Performance on test data with the best parameters
+```{r, eval=FALSE}
 pred_svm_tune <- predict(svm_tune, train_drop_raw)
 cm_svm_tune <- confusionMatrix(pred_svm_tune, as.factor(train_drop_raw$Diagnosis), positive = "M")
 cm_svm_tune
 
 #Plotting the Resampling Profile: Examine the relationship between the estimates of performance and the tuning parameters
 
-#trellis.par.set(caretTheme())
-plot(svm_tune)  
 ```
 
-#Neural network
-```{r neural net scale, echo=TRUE}
+### **The best parameters on training data doesn't guarentee the best performance on the test data. It could be easily overfitting. The final values used for the model were sigma = 0.015 and C = 1.**
+### **Instead of just doing grid search, could we add another regulization papameter to reduce over fitting, or **
+### **instead of choosing the best pair of parameters (C, sigma), allow more errors and use another algorithm, for example, select top 3 pairs on test dataset to find the best pair of parameters?**
+
+## Neural network
+```{r neural net scale, eval=FALSE}
 fitControl <- trainControl(method="repeatedcv",
                            number = 5,
                             repeats =5,
@@ -436,14 +491,17 @@ model_nnet <- train(Diagnosis~.,
 #model_nnet
 pred_nnet <- predict(model_nnet, test_drop_raw)
 cm_nnet <- confusionMatrix(pred_nnet, as.factor(test_drop_raw$Diagnosis), positive = "M")
-cm_nnet
 
 # #grid search for nnet
 # nnetGrid <-  expand.grid(size = seq(from = 1, to = 10, by = 1),
 #                         decay = seq(from = 0.1, to = 0.5, by = 0.1))
 ```
-#Neural network with pca
-```{r neural net scale pca, echo=TRUE}
+```{r, eval=FALSE}
+cm_nnet
+```
+
+## Neural network with pca
+```{r neural net scale pca, eval=FALSE}
 set.seed(825)
 fitControl <- trainControl(method="repeatedcv",
                            number = 5,
@@ -465,19 +523,22 @@ cm_nnet_pca <- confusionMatrix(pred_nnet_pca, as.factor(test_raw$Diagnosis), pos
 cm_nnet_pca 
 
 ```
+```{r, eval=FALSE}
+cm_nnet_pca 
+```
 
-#Models evaluation by caret with cross validation; training model; overfitting
-```{r}
-model_list <- list(
-                    
-                   Caret_svm_scale= svm_scale, Caret_svm_scale_pca=svm_scale_pca, 
+
+# Models evaluation by caret package with cross validation on training model
+```{r, eval=FALSE}
+model_list <- list(Caret_svm_scale= svm_scale, Caret_svm_scale_pca=svm_scale_pca, 
                    Caret_drop_svm_pca=svm_drop_pca, Caret_nnet_pca=nnet_pca)
 resamples <- resamples(model_list)
 bwplot(resamples, metric = "ROC")
 ```
 
-#Test model evaluation overall
-```{r, echo=TRUE}
+# Overall model evaluation on test data
+## **Final model achieved accuracy of 0.9825.**
+```{r, eval=FALSE}
 overall <- data.frame(model = rep(c("Svm_raw", "Svm_drop","Caret_svm_scale", "Caret_svm_scale_pca", "Caret_drop_svm_pca", "Caret_nnet_pca")),
                       rbind(cm_svm$overall,
                             cm_drop_svm$overall,
@@ -488,7 +549,7 @@ overall <- data.frame(model = rep(c("Svm_raw", "Svm_drop","Caret_svm_scale", "Ca
 #overall
 overall_gather <- overall[,1:3] %>%
   gather(measure, value, Accuracy:Kappa)
-overall_gather
+#overall_gather
 byClass <- data.frame(model = rep(c("Svm_raw", "Svm_drop","Caret_svm_scale", "Caret_svm_scale_pca", "Caret_drop_svm_pca", "Caret_nnet_pca")),
                       rbind(cm_svm$byClass,
                             cm_drop_svm$byClass,
@@ -496,13 +557,13 @@ byClass <- data.frame(model = rep(c("Svm_raw", "Svm_drop","Caret_svm_scale", "Ca
                             cm_svm_scale_pca$byClass,
                             cm_svmdrop_pca$byClass,
                             cm_nnet_pca$byClass))
-byClass  
+#byClass  
 byClass_gather <- byClass[,1:3] %>%
   gather(measure, value, Sensitivity:Specificity)
 #byClass_gather
 
 overall_byClass_gather <- rbind(overall_gather, byClass_gather)
-overall_byClass_gather <- within(overall_byClass_gather, model <- factor(model, levels = c("Svm_raw", "Svm_drop","Caret_scale", "Caret_nnet_pca", "Caret_drop_svm_pca", "Caret_svm_scale_pca")))
+overall_byClass_gather <- within(overall_byClass_gather, model <- factor(model, levels = c("Svm_raw", "Svm_drop","Caret_svm_scale", "Caret_nnet_pca", "Caret_svm_scale_pca", "Caret_drop_svm_pca")))
 
 #overall_byClass_gather
 OV<-overall_byClass_gather %>% 
@@ -513,21 +574,30 @@ OV<-overall_byClass_gather %>%
 
 Per<-ggplot(OV, aes(x = model, y = value)) +
     geom_point(shape=1)  +
+    scale_x_discrete(labels = abbreviate) +
     scale_y_continuous(breaks=c(0.6,0.8, 0.94, 0.96,0.97,0.98, 0.99)) 
 
-library(plotly)
-library(plyr)
-library(dplyr)
 Performance <- ggplotly(Per) %>%
-  layout(title = 'Model performance',
-         xaxis = list(title = 'model'),
+  layout(title = 'Interactive Model Performance',
+         xaxis = list(title = 'Model'),
          yaxis = list (title = 'Accuracy'))
 Performance
 ```
 
-#Conclusions:
-1. Variable scale and variable dimention deduction (using PCA here) is very important. 
-2. With the appropriate variable selection, it reduces the variation of dimention deduction with a stable result. 
-3. Training performance could be overfitting.
+# **Takeaways:**
+### 1. Scaling variables is very important. and tuning parameters by using resampling technique for example, cross validation is more important.
+
+### 2. Reduce multicolinearity could stablize the model performance.
+
+### 3. Dimention deduction (using PCA here) with out feature selection is not robust. It would takes time to find a sweet spot on the optimal PCA value.
+
+### 4. In another word, with the appropriate feature selection, it reduces the variation of dimention deduction with a stable result. 
+
+### 5. The best tuning parameters on training could be overfitting. Neural network tends to overfit the model.
+
+### 6. Grid search method could be improved by combing performance on test data instead of sololy relys on training data.
+
+### 7. A good SVM could perform better than neurual network and could explain important features.
+
 
 
